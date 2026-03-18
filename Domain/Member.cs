@@ -2,12 +2,18 @@
 
 public class Member
 {
-    public int Account { get; set; }
+    public int AccountId { get; set; }
     public string Name { get; set; }
 
-    public Member(int account, string name)
+    public Member(int accountId, string name)
     {
-        Account = account;
+        AccountId = accountId;
+        Name = name;
+    }
+
+    public void UpdateMember(int accountId, string name)
+    {
+        AccountId = accountId;
         Name = name;
     }
 }
