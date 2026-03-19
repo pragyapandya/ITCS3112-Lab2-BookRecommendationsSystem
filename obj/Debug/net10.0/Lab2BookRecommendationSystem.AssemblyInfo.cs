@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Lab2BookRecommendationSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e0a0d2c21435ce993a117e6a822cc924a1c2dfd4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b904decb11215fa39bbf8f464bdd309d0e05d87f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Lab2BookRecommendationSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Lab2BookRecommendationSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

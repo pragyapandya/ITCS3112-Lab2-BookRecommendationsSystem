@@ -1,9 +1,12 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using Lab2BookRecommendationSystem.Contracts;
+using Lab2BookRecommendationSystem.Repositories;
+using Lab2BookRecommendationSystem.Services;
+namespace Lab2BookRecommendationSystem;
 
-/*
- * Authors:
- * Matthew Shaw
- * Pragya Pandya - 801392869
- */
-
-Console.WriteLine("Hello, World!");
+public class Program
+{
+    public static void Main(String[] args)
+    {
+        
+    }
+}

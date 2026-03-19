@@ -8,19 +8,19 @@
     "net10.0": []
   },
   "packageFolders": {
-    "C:\\Users\\pragy\\.nuget\\packages\\": {}
+    "C:\\Users\\maste\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\pragy\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\Lab2BookRecommendationSystem.csproj",
+      "projectUniqueName": "C:\\Users\\maste\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\Lab2BookRecommendationSystem.csproj",
       "projectName": "Lab2BookRecommendationSystem",
-      "projectPath": "C:\\Users\\pragy\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\Lab2BookRecommendationSystem.csproj",
-      "packagesPath": "C:\\Users\\pragy\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\pragy\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\obj\\",
+      "projectPath": "C:\\Users\\maste\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\Lab2BookRecommendationSystem.csproj",
+      "packagesPath": "C:\\Users\\maste\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\maste\\RiderProjects\\ITCS3112-Lab2-BookRecommendationsSystem\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\pragy\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\maste\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
@@ -65,7 +65,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Users\\pragy\\.dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",
