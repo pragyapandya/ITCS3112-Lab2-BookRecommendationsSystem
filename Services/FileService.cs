@@ -1,5 +1,6 @@
 ﻿using Lab2BookRecommendationSystem.Domain;
-namespace Lab2BookRecommendationSystem.Services;
+using Lab2BookRecommendationSystem.Repositories;
+using Lab2BookRecommendationSystem.Services;
 
 public class FileService
 {
@@ -12,14 +13,14 @@ public class FileService
         MemberFile = memberFile;
     }
 
-    public void PopulateBooks(string bookFile)
+    public BookService  PopulateBooks(string bookFile)
     {
         if (bookFile is null)
         {
             throw new ArgumentNullException(nameof(bookFile));
         }
 
-        var books = new List<Book>();
+        var books = new BookService(new BookRepository());
         int isbnCounter = 1;
         
         foreach (var line in File.ReadLines(bookFile))
@@ -42,14 +43,21 @@ public class FileService
                 {
                     int.TryParse(yearStr.Split('-')[1], out endYear);
                 }
-                books.Add(new BookSeries(isbn, author, title, startYear, endYear));
+                books.NewBook(new BookSeries(isbn, author, title, startYear, endYear));
             }
             else
             {
                 int.TryParse(yearStr, out int year);
-                books.Add(new Book(isbn, author, title, year));
+                books.NewBook(new Book(isbn, author, title, year));
             }
         }
+        
+        // Test to confirm books list exist
+        /*
+        Console.WriteLine(books.Count);
+        Console.WriteLine(books[44].Title);
+        */
+        return books;
     }
 
     public void PopulateRatings(string ratingFile)
@@ -57,12 +65,14 @@ public class FileService
         var members = new List<Member>();
         var ratings = new List<Rating>();
         int memberAccountId = 1;
-        
+
         if (ratingFile is null)
         {
             throw new ArgumentNullException(nameof(ratingFile));
         }
-        
+
+
+        // Parsing of Member&Ratings File
         foreach (var line in File.ReadLines(ratingFile))
         {
             var lineSplit = line.Split(' ');
@@ -72,10 +82,21 @@ public class FileService
             // Need Rating Logic to Complete
             // for (int i = 1; i < lineSplit.Length; i++)
             // {
-            //     
+            //
             // }
+            memberAccountId++;
         }
 
-        memberAccountId++;
+
+        // Test to confirm members and ratings lists exist
+        /*
+        Console.WriteLine(members.Count);
+        Console.WriteLine(members[4].AccountId);
+        Console.WriteLine(ratings.Count);
+        */
+        
+        
+        
     }
+    
 }
