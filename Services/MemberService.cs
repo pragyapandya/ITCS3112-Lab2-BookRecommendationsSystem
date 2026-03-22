@@ -50,11 +50,13 @@ public class MemberService : IMemberService
 
     public bool UpdateLoggedInMember(string newName)
     {
+        //making sure to validate the update
         if (!IsLoggedIn() || string.IsNullOrWhiteSpace(newName))
         {
             return false;
         }
         
+        //extra feature to update member info (name)
         _loggedInMember.Name = newName;
         _repo.UpdateMember((_loggedInMember));
 
