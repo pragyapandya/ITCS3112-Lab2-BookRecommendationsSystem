@@ -1,4 +1,6 @@
-﻿using Lab2BookRecommendationSystem.Contracts;
+﻿using System;
+using System.Collections.Generic;
+using Lab2BookRecommendationSystem.Contracts;
 using Lab2BookRecommendationSystem.Domain;
 namespace Lab2BookRecommendationSystem.Services;
 

@@ -16,18 +16,18 @@ public class MemberRepo : IMemberRepo
 
     public Member GetMemberByAccount(int account)
     {
-        return _members.SingleOrDefault(m => m.Account == account);
+        return _members.SingleOrDefault(m => m.AccountId == account);
     }
 
     public int GenerateNewAccountId()
     {
         if (_members.Count == 0) return 1;
-        return _members.Max(m => m.Account) + 1;
+        return _members.Max(m => m.AccountId) + 1;
     }
 
     public void UpdateMember(Member updatedMember)
     {
-        var existingMember = GetMemberByAccount(updatedMember.Account);
+        var existingMember = GetMemberByAccount(updatedMember.AccountId);
      
         if (existingMember != null)
         {
