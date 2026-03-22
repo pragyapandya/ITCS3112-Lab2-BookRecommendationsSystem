@@ -34,4 +34,15 @@ public class MemberRepo : IMemberRepo
             existingMember.Name = updatedMember.Name;
         }
     }
+
+    public List<Member> GetAllMembers()
+    {
+        List<Member> memList = new List<Member>();
+        foreach (var mem in _members)
+        {
+            memList.Add(mem);
+        }
+
+        return memList;
+    }
 }

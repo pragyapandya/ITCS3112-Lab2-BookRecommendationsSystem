@@ -9,18 +9,7 @@ namespace Lab2BookRecommendationSystem.Contracts;
 /// </summary>
 public interface IRecommendationService
 {
-    /// <summary>
-    /// Finds a recommendation for a member based on their unique account identifier.
-    /// </summary>
-    /// <param name="accountId">The member's account ID.</param>
-    /// <returns>The recommendation if found; otherwise, null.</returns>
-    /// <remarks>
-    /// Preconditions:
-    /// <paramref name="accountId"/> is a valid account ID and not null.
-    /// Postconditions:
-    /// The recommendation is returned if found; otherwise, null.
-    /// </remarks>
-    public Member? FindRecommendation(int accountId);
+
 
     /// <summary>
     /// Generates a list of book recommendations for a member 

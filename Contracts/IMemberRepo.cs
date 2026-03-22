@@ -42,5 +42,6 @@ namespace Lab2BookRecommendationSystem.Contracts
         /// <param name="member"></param>
         void UpdateMember(Member member);
 
+        List<Member> GetAllMembers();
     }
 }
