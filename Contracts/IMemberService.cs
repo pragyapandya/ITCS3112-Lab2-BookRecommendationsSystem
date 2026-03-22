@@ -1,5 +1,5 @@
-﻿using Lab2BookRecommendationSystem.Domain;
-
+﻿using System.Collections.Generic;
+using Lab2BookRecommendationSystem.Domain;
 namespace Lab2BookRecommendationSystem.Contracts;
 
 public interface IMemberService
