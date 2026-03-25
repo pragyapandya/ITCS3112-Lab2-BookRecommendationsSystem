@@ -43,7 +43,7 @@ public class RecommendationService : IRecommendationService
     {
         if (member is null) throw new ArgumentNullException(nameof(member));
  
-        // Snapshot the book list once — every vector is aligned to this same list.
+        // Snapshot the book list once 
         var allBooks = _bookRepository.GetAllBooks();
  
         var targetVector = _ratingService.GetRatingVector(member, allBooks);
@@ -60,8 +60,9 @@ public class RecommendationService : IRecommendationService
         foreach (var candidate in otherMembers)
         {
             var candidateVector = _ratingService.GetRatingVector(candidate, allBooks);
+
             int score = DotProduct(targetVector, candidateVector);
- 
+            Console.WriteLine("DotProduct: "+ score);
             if (score > highestScore)
             {
                 highestScore = score;
@@ -124,10 +125,7 @@ public class RecommendationService : IRecommendationService
         return DotProduct(vector1, vector2);
     }
  
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
- 
+   
     /// <summary>
     /// Computes the dot product of two integer vectors.
     /// Stops at the shorter vector's length if sizes differ.

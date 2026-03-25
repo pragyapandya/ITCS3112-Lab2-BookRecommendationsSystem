@@ -8,7 +8,6 @@ namespace Lab2BookRecommendationSystem.Repositories;
  
 /// <summary>
 /// In-memory repository for <see cref="Rating"/> objects.
-/// Ratings are stored in a flat list and looked up via LINQ.
 /// </summary>
 public class RatingRepo : IRatingRepo
 {
