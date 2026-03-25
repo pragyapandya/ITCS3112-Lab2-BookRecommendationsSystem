@@ -14,7 +14,7 @@ public class RatingRepo : IRatingRepo
 {
     private readonly List<Rating> _ratings = new List<Rating>();
  
-    /// <inheritdoc/>
+    
     public void AddRating(Rating rating)
     {
         if (rating is null)
@@ -25,7 +25,7 @@ public class RatingRepo : IRatingRepo
         _ratings.Add(rating);
     }
  
-    /// <inheritdoc/>
+    
     public void UpdateRating(Rating rating)
     {
         if (rating is null)
@@ -37,7 +37,7 @@ public class RatingRepo : IRatingRepo
         existing?.UpdateScore(rating.Score);
     }
  
-    /// <inheritdoc/>
+    
     public Rating? GetRating(int memberId, string bookIsbn)
     {
         if (bookIsbn is null)
@@ -49,13 +49,11 @@ public class RatingRepo : IRatingRepo
             r.MemberId == memberId && r.BookIsbn == bookIsbn);
     }
  
-    /// <inheritdoc/>
     public List<Rating> GetRatingsByMember(int memberId)
     {
         return _ratings.Where(r => r.MemberId == memberId).ToList();
     }
  
-    /// <inheritdoc/>
     public List<Rating> GetAllRatings()
     {
         return _ratings.ToList();

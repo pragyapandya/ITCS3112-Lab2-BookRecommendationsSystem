@@ -34,7 +34,7 @@ public class RecommendationService : IRecommendationService
         _memberRepo     = memberRepo     ?? throw new ArgumentNullException(nameof(memberRepo));
     }
  
-    /// <inheritdoc/>
+    
     /// <remarks>
     /// The target member's rating vector is built once and reused across
     /// all candidate comparisons to avoid redundant work.
@@ -74,7 +74,7 @@ public class RecommendationService : IRecommendationService
 
 
 
-    /// <inheritdoc/>
+    
     /// <remarks>
     /// Finds the most similar member, then recommends their positively-rated
     /// books that the target member has not yet rated, ordered highest score first.
@@ -111,7 +111,7 @@ public class RecommendationService : IRecommendationService
             .ToList();
     }
  
-    /// <inheritdoc/>
+   
     public int CalculateSimilarity(Member member1, Member member2)
     {
         if (member1 is null) throw new ArgumentNullException(nameof(member1));

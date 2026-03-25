@@ -24,7 +24,6 @@ public class RatingService : IRatingService
         _ratingRepo = ratingRepo ?? throw new ArgumentNullException(nameof(ratingRepo));
     }
  
-    /// <inheritdoc/>
     public void RateBook(Member member, Book book, int score)
     {
         if (member is null)
@@ -57,7 +56,6 @@ public class RatingService : IRatingService
         }
     }
  
-    /// <inheritdoc/>
     public List<Rating> GetMemberRatings(Member member)
     {
         if (member is null)
@@ -68,7 +66,6 @@ public class RatingService : IRatingService
         return _ratingRepo.GetRatingsByMember(member.AccountId);
     }
  
-    /// <inheritdoc/>
     public bool HasMemberRatedBook(Member member, Book book)
     {
         if (member is null)
@@ -84,7 +81,6 @@ public class RatingService : IRatingService
         return _ratingRepo.GetRating(member.AccountId, book.Isbn) is not null;
     }
  
-    /// <inheritdoc/>
     public List<int> GetRatingVector(Member member, List<Book> allBooks)
     {
         if (member is null)

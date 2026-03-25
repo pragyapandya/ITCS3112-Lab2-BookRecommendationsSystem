@@ -4,62 +4,58 @@ using Lab2BookRecommendationSystem.Services;
 using System.IO;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Lab2BookRecommendationSystem.Domain;
  
 namespace Lab2BookRecommendationSystem;
  
 public class Program
 {
-    // ─────────────────────────────────────────────────────────────────────────
-    // Entry point
-    // ─────────────────────────────────────────────────────────────────────────
+   
+    private static BookService bookService = null!;
+    private static MemberService memberService = null!;
+    private static RatingService ratingService = null!;
+    private static RecommendationService recommendationService = null!;
+    private static FileService fileService = null!;
  
+   
     public static void Main(string[] args)
     {
-        Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║         Book Recommendation System — Functionality Test      ║");
-        Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+        Console.WriteLine("Welcome to the Book Recommendation Program.");
         Console.WriteLine();
  
-        // ── 1. File paths ──────────────────────────────────────────────────
-        string baseDir     = AppContext.BaseDirectory;
-        string booksPath   = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\Files\books.txt"));
-        string ratingsPath = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\Files\ratings.txt"));
+        
+        string baseDir      = AppContext.BaseDirectory;
+        string defaultBooks = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\Files\books.txt"));
+        string defaultRatings = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\Files\ratings.txt"));
  
-        // ── 2. Wire up the whole system ────────────────────────────────────
-        PrintSection("STEP 1 — Loading data files");
+        Console.Write("Enter books file: ");
+        string booksInput = Console.ReadLine()?.Trim() ?? "";
+        string booksPath  = string.IsNullOrEmpty(booksInput) ? defaultBooks : booksInput;
  
-        BookService?   bookService   = null;
-        MemberService? memberService = null;
-        RatingService? ratingService = null;
-        RecommendationService? recommendationService = null;
-        FileService fileService = new FileService(booksPath, ratingsPath);
+        Console.Write("Enter rating file: ");
+        string ratingsInput = Console.ReadLine()?.Trim() ?? "";
+        string ratingsPath  = string.IsNullOrEmpty(ratingsInput) ? defaultRatings : ratingsInput;
+   
+        fileService = new FileService(booksPath, ratingsPath);
  
         try
         {
             bookService = fileService.PopulateBooks(booksPath);
-            Pass($"Books loaded: {bookService.ListAllBooks().Count}");
         }
         catch (Exception ex)
         {
-            Fail($"PopulateBooks failed: {ex.Message}");
-            return; // Cannot continue without books
+            Console.WriteLine($"Error loading books: {ex.Message}");
+            return;
         }
  
         try
         {
             (memberService, ratingService) = fileService.PopulateRatings(ratingsPath);
- 
-            int memberCount = fileService.MemberRepo!.GetAllMembers().Count;
-            int ratingCount = fileService.RatingRepo!.GetAllRatings().Count;
- 
-            Pass($"Members loaded:  {memberCount}");
-            Pass($"Ratings loaded:  {ratingCount}  " +
-                 "(score-0 entries correctly excluded — they mean 'unread')");
         }
         catch (Exception ex)
         {
-            Fail($"PopulateRatings failed: {ex.Message}");
+            Console.WriteLine($"Error loading ratings: {ex.Message}");
             return;
         }
  
@@ -69,346 +65,390 @@ public class Program
                 fileService.BookRepo!,
                 ratingService,
                 fileService.MemberRepo!);
- 
-            Pass("RecommendationService wired up successfully");
         }
         catch (Exception ex)
         {
-            Fail($"RecommendationService construction failed: {ex.Message}");
+            Console.WriteLine($"Error initializing services: {ex.Message}");
             return;
         }
  
-        // ── 3. Book listing spot-check ──────────────────────────────────────
-        PrintSection("STEP 2 — Book catalogue spot-check (first 5 books)");
+        Console.WriteLine();
+        Console.WriteLine($"# of books: {bookService.ListAllBooks().Count}");
+        Console.WriteLine($"# of memberList: {fileService.MemberRepo!.GetAllMembers().Count}");
  
-        try
+        
+        bool running = true;
+        while (running)
         {
-            List<Book> allBooks = bookService.ListAllBooks();
-            foreach (var book in allBooks.GetRange(0, Math.Min(5, allBooks.Count)))
+            if (!memberService.IsLoggedIn())
             {
-                string yearDisplay = book is BookSeries bs
-                    ? $"{book.Year}–{bs.EndYear}"
-                    : book.Year.ToString();
-                Console.WriteLine($"  [{book.Isbn}]  {book.Title}  |  {book.Author}  |  {yearDisplay}");
-            }
-            Pass("Catalogue readable");
-        }
-        catch (Exception ex)
-        {
-            Fail($"Book listing failed: {ex.Message}");
-        }
- 
-        // ── 4. Login / logout ───────────────────────────────────────────────
-        PrintSection("STEP 3 — Login / Logout");
- 
-        try
-        {
-            // Brandon is member ID 1 (first entry in ratings.txt)
-            bool loggedIn = memberService!.Login(1);
-            if (!loggedIn) throw new Exception("Login returned false for member ID 1");
- 
-            Member loggedInMember = memberService.GetLoggedInMember();
-            Pass($"Login succeeded  →  Welcome, {loggedInMember.Name} (ID: {loggedInMember.AccountId})");
-            Pass($"IsLoggedIn: {memberService.IsLoggedIn()}");
- 
-            memberService.Logout();
-            Pass($"Logout succeeded  →  IsLoggedIn: {memberService.IsLoggedIn()}");
-        }
-        catch (Exception ex)
-        {
-            Fail($"Login/Logout failed: {ex.Message}");
-        }
- 
-        // ── 5. View personal ratings ────────────────────────────────────────
-        PrintSection("STEP 4 — View personal ratings  (Brandon, ID 1)");
- 
-        try
-        {
-            memberService!.Login(1);
-            Member brandon = memberService.GetLoggedInMember();
- 
-            List<Rating>  brandonRatings = ratingService!.GetMemberRatings(brandon);
-            List<Book>    allBooks       = bookService.ListAllBooks();
- 
-            // Build a quick ISBN → Book lookup for display
-            var bookLookup = new Dictionary<string, Book>();
-            foreach (var b in allBooks) bookLookup[b.Isbn] = b;
- 
-            Console.WriteLine($"  {brandon.Name} has rated {brandonRatings.Count} books:");
-            Console.WriteLine($"  {"Score",-7} {"ISBN",-6} Title");
-            Console.WriteLine($"  {new string('-', 55)}");
- 
-            foreach (var r in brandonRatings)
-            {
-                string title = bookLookup.TryGetValue(r.BookIsbn, out var bk) ? bk.Title : "Unknown";
-                
-                Console.WriteLine($"  {r.Score,+3}    [{r.BookIsbn}]  {title}");
-            }
- 
-            Pass("Personal ratings displayed successfully");
-        }
-        catch (Exception ex)
-        {
-            Fail($"View ratings failed: {ex.Message}");
-        }
- 
-        // ── 6. Similarity calculation ───────────────────────────────────────
-        PrintSection("STEP 5 — Similarity score (Brandon vs first 5 other members)");
- 
-        try
-        {
-            Member brandon = memberService!.GetLoggedInMember();
-            var    others  = fileService.MemberRepo!.GetAllMembers()
-                                .Where(m => m.AccountId != brandon.AccountId)
-                                .Take(5)
-                                .ToList();
- 
-            Console.WriteLine($"  Comparing {brandon.Name} against:");
-            Console.WriteLine($"  {"Member",-15} {"Similarity Score",17}");
-            Console.WriteLine($"  {new string('-', 33)}");
- 
-            foreach (var other in others)
-            {
-                int sim = recommendationService!.CalculateSimilarity(brandon, other);
-                string otherName = other.Name;
-                Console.WriteLine($"  {otherName ,-15} {sim,17}");
-            }
- 
-            Pass("Similarity calculations completed");
-        }
-        catch (Exception ex)
-        {
-            Fail($"Similarity calculation failed: {ex.Message}");
-        }
- 
-        // ── 7. Find most similar member ─────────────────────────────────────
-        PrintSection("STEP 6 — Most similar member lookup");
- 
-        try
-        {
-            Member brandon = memberService!.GetLoggedInMember();
-            Member? similar = recommendationService!.FindMostSimilarMember(brandon);
- 
-            if (similar is null)
-            {
-                Console.WriteLine("  No other members found to compare.");
-            }
-            else
-            {
-                int sim = recommendationService.CalculateSimilarity(brandon, similar);
-                Pass($"Most similar to {brandon.Name}:  {similar.Name}  " +
-                     $"(dot-product similarity = {sim})");
-            }
-        }
-        catch (Exception ex)
-        {
-            Fail($"FindMostSimilarMember failed: {ex.Message}");
-        }
- 
-        // ── 8. Generate recommendations ─────────────────────────────────────
-        PrintSection("STEP 7 — Generate recommendations  (Brandon)");
- 
-        try
-        {
-            Member brandon = memberService!.GetLoggedInMember();
-            List<Book> recs = recommendationService!.GenerateRecommendations(brandon);
- 
-            if (recs.Count == 0)
-            {
-                Console.WriteLine("  No recommendations generated (all books already rated).");
-            }
-            else
-            {
-                Console.WriteLine($"  Top recommendations for {brandon.Name}:");
-                for (int i = 0; i < Math.Min(5, recs.Count); i++)
+                PrintLoggedOutMenu();
+                string choice = Console.ReadLine()?.Trim() ?? "";
+                switch (choice)
                 {
-                    Console.WriteLine($"    {i + 1}. {recs[i].Title}  ({recs[i].Author})");
+                    case "1": HandleAddMember();  break;
+                    case "2": HandleAddBook();    break;
+                    case "3": HandleLogin();      break;
+                    case "4": running = false;    break;
+                    default:
+                        Console.WriteLine("Invalid option. Please try again.");
+                        break;
                 }
             }
- 
-            Pass($"Recommendations generated: {recs.Count} books");
-        }
-        catch (Exception ex)
-        {
-            Fail($"GenerateRecommendations failed: {ex.Message}");
-        }
- 
-        memberService!.Logout();
- 
-        // ── 9. New member creation + manual rating + recommendation ─────────
-        PrintSection("STEP 8 — New member: create, rate books, get recommendations");
- 
-        try
-        {
-            Member newMember = memberService!.CreateNewMember("TestUser");
-            Pass($"New member created: {newMember.Name} (ID: {newMember.AccountId})");
- 
-            memberService.Login(newMember.AccountId);
-            Pass($"Logged in as {memberService.GetLoggedInMember().Name}");
- 
-            // Rate a handful of books manually (use first 6 books from the catalogue)
-            List<Book> catalogue = bookService.ListAllBooks();
-            var toRate = new[] { (catalogue[0], 5), (catalogue[1], 3), (catalogue[4], -3),
-                                 (catalogue[11], 5), (catalogue[13], 5), (catalogue[42], 3) };
- 
-            foreach (var (book, score) in toRate)
+            else
             {
-                ratingService!.RateBook(newMember, book, score);
-                Console.WriteLine($"    Rated [{book.Isbn}] '{book.Title}'  →  {score} ");
-            }
- 
-            Pass($"Rated {toRate.Length} books");
- 
-            List<Rating> myRatings = ratingService!.GetMemberRatings(newMember);
-            Pass($"GetMemberRatings returned {myRatings.Count} entries (expected {toRate.Length})");
- 
-            // HasMemberRatedBook spot-checks
-            bool ratedFirst   = ratingService.HasMemberRatedBook(newMember, catalogue[0]);
-            bool ratedLast    = ratingService.HasMemberRatedBook(newMember, catalogue[catalogue.Count - 1]);
-            Pass($"HasMemberRatedBook: catalogue[0] = {ratedFirst} (expect True), " +
-                 $"catalogue[last] = {ratedLast} (expect False)");
- 
-            // Recommendations for the new member
-            List<Book> newRecs = recommendationService!.GenerateRecommendations(newMember);
-            Pass($"Recommendations for TestUser: {newRecs.Count} books");
- 
-            if (newRecs.Count > 0)
-            {
-                Console.WriteLine($"  Top recommendations for {newMember.Name}:");
-                for (int i = 0; i < Math.Min(5, newRecs.Count); i++)
+                PrintLoggedInMenu();
+                string choice = Console.ReadLine()?.Trim() ?? "";
+                switch (choice)
                 {
-                    Console.WriteLine($"    {i + 1}. {newRecs[i].Title}");
+                    case "1": HandleAddMember();       break;
+                    case "2": HandleAddBook();         break;
+                    case "3": HandleRateBook();        break;
+                    case "4": HandleViewRatings();     break;
+                    case "5": HandleRecommendations(); break;
+                    case "6": HandleLogout();          break;
+                    default:
+                        Console.WriteLine("Invalid option. Please try again.");
+                        break;
                 }
- 
-                // Verify none of the recommendations are books TestUser already rated
-                bool noOverlap = !newRecs.Any(rec =>
-                    toRate.Any(t => t.Item1.Isbn == rec.Isbn));
-                Pass($"No overlap with already-rated books: {noOverlap}");
             }
- 
-            memberService.Logout();
-            Pass("Logout successful");
         }
-        catch (Exception ex)
+ 
+        Console.WriteLine();
+        Console.WriteLine("Thank you for using the Book Recommendation Program!");
+    }
+ 
+   
+    private static void PrintLoggedOutMenu()
+    {
+        Console.WriteLine();
+        Console.WriteLine("************** MENU **************");
+        Console.WriteLine("* 1. Add a new member            *");
+        Console.WriteLine("* 2. Add a new book              *");
+        Console.WriteLine("* 3. Login                       *");
+        Console.WriteLine("* 4. Quit                        *");
+        Console.WriteLine("**********************************");
+        Console.WriteLine();
+        Console.Write("Enter a menu option: ");
+    }
+ 
+    private static void PrintLoggedInMenu()
+    {
+        Console.WriteLine();
+        Console.WriteLine("************** MENU **************");
+        Console.WriteLine("* 1. Add a new member            *");
+        Console.WriteLine("* 2. Add a new book              *");
+        Console.WriteLine("* 3. Rate book                   *");
+        Console.WriteLine("* 4. View ratings                *");
+        Console.WriteLine("* 5. See recommendations         *");
+        Console.WriteLine("* 6. Logout                      *");
+        Console.WriteLine("**********************************");
+        Console.WriteLine();
+        Console.Write("Enter a menu option: ");
+    }
+ 
+    /// <summary>
+    /// Option 1 (both menus): creates a new member and confirms creation.
+    /// </summary>
+    private static void HandleAddMember()
+    {
+        Console.Write("Enter the name of the new member: ");
+        string name = Console.ReadLine()?.Trim() ?? "";
+ 
+        if (string.IsNullOrEmpty(name))
         {
-            Fail($"New member workflow failed: {ex.Message}");
+            Console.WriteLine("Name cannot be empty.");
+            return;
         }
- 
-        // ── 10. Edge case — invalid score ────────────────────────────────────
-        PrintSection("STEP 9 — Edge case: invalid rating score");
  
         try
         {
-            Member testMember = memberService!.CreateNewMember("EdgeCaseUser");
-            memberService.Login(testMember.AccountId);
-            List<Book> catalogue = bookService.ListAllBooks();
- 
-            // Score 4 is not a valid value — RatingService should throw
-            ratingService!.RateBook(testMember, catalogue[0], 4);
-            Fail("Expected ArgumentException for invalid score 4 — none was thrown");
-        }
-        catch (ArgumentException)
-        {
-            Pass("ArgumentException correctly thrown for invalid score (4)");
+            Member newMember = memberService.CreateNewMember(name);
+            Console.WriteLine($"{newMember.Name} (account #: {newMember.AccountId}) was added.");
         }
         catch (Exception ex)
         {
-            Fail($"Unexpected exception type: {ex.GetType().Name} — {ex.Message}");
+            Console.WriteLine($"Could not add member: {ex.Message}");
         }
-        finally
-        {
-            memberService?.Logout();
-        }
+    }
  
-        // ── 11. Edge case — member with zero ratings ─────────────────────────
-        PrintSection("STEP 10 — Edge case: recommendation for member with no ratings");
+    /// <summary>
+    /// Option 2 (both menus): prompts for book data, generates the next ISBN,
+    /// and adds the book to the repository.
+    /// </summary>
+    private static void HandleAddBook()
+    {
+        Console.Write("Enter the author of the new book: ");
+        string author = Console.ReadLine()?.Trim() ?? "";
+ 
+        Console.Write("Enter the title of the new book: ");
+        string title = Console.ReadLine()?.Trim() ?? "";
+ 
+        Console.Write("Enter the year (or range of years) of the new book: ");
+        string yearStr = Console.ReadLine()?.Trim() ?? "";
+ 
+        if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(yearStr))
+        {
+            Console.WriteLine("All fields are required.");
+            return;
+        }
  
         try
         {
-            Member emptyMember = memberService!.CreateNewMember("NoRatingsUser");
-            memberService.Login(emptyMember.AccountId);
+            int    nextNum = GetNextIsbnNumber();
+            string isbn    = $"B{nextNum}";
+            Book   book;
  
-            List<Book> recs = recommendationService!.GenerateRecommendations(emptyMember);
-            // With a zero vector, dot products with any member are 0.
-            // FindMostSimilarMember still picks someone (highest of all-zero scores).
-            // Recommendations may be empty or populated depending on who 'wins'.
-            Pass($"No crash for zero-rating member. Recommendations returned: {recs.Count}");
- 
-            memberService.Logout();
-        }
-        catch (Exception ex)
-        {
-            Fail($"Zero-rating edge case failed: {ex.Message}");
-        }
- 
-        // ── 12. Edge case — rating the same book twice (upsert) ─────────────
-        PrintSection("STEP 11 — Edge case: re-rating a book (upsert)");
- 
-        try
-        {
-            Member upsertMember = memberService!.CreateNewMember("UpsertUser");
-            memberService.Login(upsertMember.AccountId);
- 
-            List<Book> catalogue = bookService.ListAllBooks();
-            Book target = catalogue[0];
- 
-            ratingService!.RateBook(upsertMember, target, 1);
-            ratingService.RateBook(upsertMember, target, 5); // update existing
- 
-            List<Rating> ratings = ratingService.GetMemberRatings(upsertMember);
-            if (ratings.Count != 1)
+            if (yearStr.Contains('-'))
             {
-                Fail($"Expected 1 rating after upsert, got {ratings.Count}");
-            }
-            else if (ratings[0].Score != 5)
-            {
-                Fail($"Expected updated score 5, got {ratings[0].Score}");
+                string[] parts = yearStr.Split('-');
+                int.TryParse(parts[0].Trim(), out int startYear);
+                int endYear = parts[1].Trim().ToLower() == "present"
+                    ? DateTime.Today.Year
+                    : int.TryParse(parts[1].Trim(), out int parsedEnd) ? parsedEnd : startYear;
+ 
+                book = new BookSeries(isbn, author, title, startYear, endYear);
             }
             else
             {
-                Pass($"Upsert correct: 1 rating record with updated score = {ratings[0].Score}");
+                int.TryParse(yearStr, out int year);
+                book = new Book(isbn, author, title, year);
             }
  
-            memberService.Logout();
+            bookService.NewBook(book);
+ 
+            // Show original yearStr (preserves "present" or ranges as the user typed them)
+            Console.WriteLine($"{nextNum}, {author}, {title}, {yearStr} was added.");
         }
         catch (Exception ex)
         {
-            Fail($"Upsert test failed: {ex.Message}");
+            Console.WriteLine($"Could not add book: {ex.Message}");
+        }
+    }
+ 
+    /// <summary>
+    /// Option 3 (logged-out menu): prompts for an account ID and logs in.
+    /// </summary>
+    private static void HandleLogin()
+    {
+        Console.Write("Enter member account: ");
+        string input = Console.ReadLine()?.Trim() ?? "";
+ 
+        if (!int.TryParse(input, out int accountId))
+        {
+            Console.WriteLine("Invalid account number.");
+            return;
         }
  
-        // ── Final summary ────────────────────────────────────────────────────
-        Console.WriteLine();
-        Console.WriteLine("╔══════════════════════════════════════════════════════════════╗");
-        Console.WriteLine("║                     All tests complete.                      ║");
-        Console.WriteLine("╚══════════════════════════════════════════════════════════════╝");
+        bool success = memberService.Login(accountId);
+        if (success)
+        {
+            Console.WriteLine($"{memberService.GetLoggedInMember().Name}, you are logged in!");
+        }
+        else
+        {
+            Console.WriteLine("Account not found.");
+        }
     }
  
-    // ─────────────────────────────────────────────────────────────────────────
-    // Console helpers
-    // ─────────────────────────────────────────────────────────────────────────
- 
-    private static void PrintSection(string title)
+    /// <summary>
+    /// Option 3 (logged-in menu): prompts for a numeric ISBN and a score,
+    /// handles re-rating if the book has already been rated.
+    /// </summary>
+    private static void HandleRateBook()
     {
-        Console.WriteLine();
-        Console.WriteLine($"┌─ {title} ");
-        Console.WriteLine();
+        Member member = memberService.GetLoggedInMember();
+ 
+        Console.Write("Enter the ISBN for the book you'd like to rate: ");
+        string input = Console.ReadLine()?.Trim() ?? "";
+ 
+        if (!int.TryParse(input, out int isbnNum))
+        {
+            Console.WriteLine("Invalid ISBN. Please enter a number (e.g. 12).");
+            return;
+        }
+ 
+        Book? book = fileService.BookRepo!.GetBookByIsbn($"B{isbnNum}");
+        if (book is null)
+        {
+            Console.WriteLine($"No book found with ISBN {isbnNum}.");
+            return;
+        }
+ 
+        // If the member already rated this book, show the current rating and ask to update.
+        if (ratingService.HasMemberRatedBook(member, book))
+        {
+            int currentScore = fileService.RatingRepo!
+                .GetRating(member.AccountId, book.Isbn)?.Score ?? 0;
+ 
+            Console.WriteLine($"Your current rating for {FormatBookRatingLine(book, currentScore)}");
+            Console.Write("Would you like to re-rate this book (y/n)? ");
+            string confirm = Console.ReadLine()?.Trim().ToLower() ?? "n";
+ 
+            if (confirm != "y") return;
+        }
+ 
+        Console.Write("Enter your rating: ");
+        string ratingInput = Console.ReadLine()?.Trim() ?? "";
+ 
+        if (!int.TryParse(ratingInput, out int score))
+        {
+            Console.WriteLine("Invalid rating. Please enter a number.");
+            return;
+        }
+ 
+        try
+        {
+            ratingService.RateBook(member, book, score);
+            Console.WriteLine($"Your new rating for {FormatBookRatingLine(book, score)}");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Invalid rating: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Could not save rating: {ex.Message}");
+        }
     }
  
-    private static void Pass(string message)
+    /// <summary>
+    /// Option 4 (logged-in menu): displays all books in order with the
+    /// logged-in member's rating (0 = unread / not yet rated).
+    /// </summary>
+    private static void HandleViewRatings()
     {
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.Write("  ✓ ");
-        Console.ResetColor();
-        Console.WriteLine(message);
+        Member     member       = memberService.GetLoggedInMember();
+        List<Book> orderedBooks = GetOrderedBooks();
+ 
+        // GetRatingVector returns a 0 for every book that has no rating record,
+        // so ALL books are shown — including unread ones — as in the sample output.
+        List<int> vector = ratingService.GetRatingVector(member, orderedBooks);
+ 
+        Console.WriteLine();
+        Console.WriteLine($"{member.Name}'s ratings...");
+ 
+        for (int i = 0; i < orderedBooks.Count; i++)
+        {
+            Console.WriteLine(FormatBookRatingLine(orderedBooks[i], vector[i]));
+        }
     }
  
-    private static void Fail(string message)
+    /// <summary>
+    /// Option 5 (logged-in menu): finds the most similar member, then displays
+    /// their positively-rated books that the logged-in member has not yet read.
+    /// Split into "really liked" (score 5) and "liked" (score 3).
+    /// Books with score 1 are excluded from display, consistent with the sample output.
+    /// </summary>
+    private static void HandleRecommendations()
     {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.Write("  ✗ ");
-        Console.ResetColor();
-        Console.WriteLine(message);
+        Member member = memberService.GetLoggedInMember();
+ 
+        Member? similar = recommendationService.FindMostSimilarMember(member);
+        if (similar is null)
+        {
+            Console.WriteLine("You have no ratings to compare with anyone else!");
+            return;
+        }
+ 
+        Console.WriteLine();
+        Console.WriteLine($"You have similar taste in books as {similar.Name}!");
+ 
+        // Build a score lookup for the similar member so we can split the output.
+        List<Book> orderedBooks   = GetOrderedBooks();
+        List<int>  similarVector  = ratingService.GetRatingVector(similar, orderedBooks);
+        var bookScoreMap = orderedBooks
+            .Select((b, i) => (b.Isbn, Score: similarVector[i]))
+            .ToDictionary(x => x.Isbn, x => x.Score);
+ 
+        // GenerateRecommendations already filters: score>0 AND member hasn't rated the book.
+        List<Book> recs = recommendationService.GenerateRecommendations(member);
+ 
+      var reallyLiked = recs
+            .Where(b => bookScoreMap.TryGetValue(b.Isbn, out int s) && s == 5)
+            .OrderBy(b => GetIsbnNum(b.Isbn))
+            .ToList();
+ 
+        var liked = recs
+            .Where(b => bookScoreMap.TryGetValue(b.Isbn, out int s) && s == 3)
+            .OrderBy(b => GetIsbnNum(b.Isbn))
+            .ToList();
+ 
+        if (reallyLiked.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Here are the books they really liked:");
+            foreach (var book in reallyLiked)
+                Console.WriteLine(FormatBookLine(book));
+        }
+ 
+        if (liked.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("And here are the books they liked:");
+            foreach (var book in liked)
+                Console.WriteLine(FormatBookLine(book));
+        }
+ 
+        if (reallyLiked.Count == 0 && liked.Count == 0)
+        {
+            Console.WriteLine("No recommendations available at this time.");
+        }
     }
  
-
+    // Helper Functions
+    
+    /// <summary>
+    /// Option 6 (logged-in menu): logs the current member out.
+    /// The next loop iteration will show the logged-out menu.
+    /// </summary>
+    private static void HandleLogout()
+    {
+        memberService.Logout();
+    }
+ 
+    /// <summary>
+    /// Parses the numeric portion of an ISBN string ("B41" → 41).
+    /// </summary>
+    private static int GetIsbnNum(string isbn) =>
+        int.TryParse(isbn.AsSpan(1), out int n) ? n : 0;
+ 
+    /// <summary>
+    /// Returns the next sequential ISBN number: max existing + 1.
+    /// Safe even if books were added at runtime.
+    /// </summary>
+    private static int GetNextIsbnNumber() =>
+        bookService.ListAllBooks()
+            .Select(b => GetIsbnNum(b.Isbn))
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+ 
+    /// <summary>
+    /// Returns all books sorted by their numeric ISBN (insertion order for display).
+    /// This guarantees books are always listed 1, 2, 3 … N regardless of
+    /// how the backing Dictionary enumerates.
+    /// </summary>
+    private static List<Book> GetOrderedBooks() =>
+        bookService.ListAllBooks()
+            .OrderBy(b => GetIsbnNum(b.Isbn))
+            .ToList();
+ 
+    /// <summary>
+    /// Formats the year field of a book for display.
+    /// Single books show just the year; series show "startYear-endYear".
+    /// </summary>
+    private static string GetYearDisplay(Book book) =>
+        book is BookSeries bs ? $"{book.Year}-{bs.EndYear}" : book.Year.ToString();
+ 
+    /// <summary>
+    /// Formats a book as "N, Author, Title, Year" (no rating suffix).
+    /// </summary>
+    private static string FormatBookLine(Book book) =>
+        $"{GetIsbnNum(book.Isbn)}, {book.Author}, {book.Title}, {GetYearDisplay(book)}";
+ 
+    /// <summary>
+    /// Formats a book line with a rating suffix: "N, Author, Title, Year => rating: X"
+    /// </summary>
+    private static string FormatBookRatingLine(Book book, int score) =>
+        $"{FormatBookLine(book)} => rating: {score}";
 }
